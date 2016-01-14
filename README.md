@@ -8,7 +8,8 @@ a tiny static http(s) web server written in golang
 (1)- `go get github.com/alash3al/xerver` .   
 (2)- `go install github.com/alash3al/xerver` .  
 
-**NOTE** you should add `GOPATH/bin` to your `PATH` ..
+**NOTE** you should add `GOPATH/bin` to your `PATH` ..  
+**NOTE** if you want the compiled version just goto [here](https://github.com/alash3al/xerver/releases/tag/v1.13.win32) and download the portable binary version `.7z file` from there .
 
 # usage 
 - `xerver -option value` or `xerver --option=value`  
