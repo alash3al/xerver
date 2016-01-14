@@ -27,7 +27,7 @@ func (this GzipResponseWriter) Write(data []byte) (int, error) {
 
 func init() {
 	flag.Parse()
-	MethodsArray = strings.Split(strings.TrimSpace(strings.ToUpper(*Methods)), "|")
+	MethodsArray = strings.Split(strings.TrimSpace(strings.ToUpper(*Methods)), ",")
 	if *GZLevel > 9 {
 		*GZLevel = 9
 	}
