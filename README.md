@@ -11,7 +11,7 @@ a tiny static http(s) web server written in golang
 **NOTE** you should add `GOPATH/bin` to your `PATH` ..
 
 # usage 
-- `xerver [options]`  
+- `xerver -option value` or `xerver --option=value`  
 - `xerver --help` for full arguments .  
 
 # options
@@ -35,3 +35,11 @@ a tiny static http(s) web server written in golang
   -ttl int
         how many seconds will the cache live ? (default -1)
 ```
+
+# examples
+
+**Serving files from `/htdocs/`** `xerver -root /htdocs/`   
+**Serving files from `/htdocs/` and listen on "0.0.0.0:8080"** `xerver -root /htdocs/ -http :8080`   
+
+# author
+[Mohammed Al Ashaal](http://www.alash3al.xyz)
