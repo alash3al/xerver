@@ -4,14 +4,14 @@ package main
 import("io"; "os"; "log"; "fmt"; "path"; "flag"; "strings"; "net/http"; "compress/gzip")
 
 var (
-	httpAddr	=	(flag.String("http", ":80", "the local address to listen on"))
-	httpsAddr	=	(flag.String("https", "", "the local address to listen on, empty to disable it"))
-	sslCert	=	(flag.String("sslcert", "", "the path to sslcert"))
-	sslKey	=	(flag.String("sslkey", "", "the path to sslkey"))
+	httpAddr	=	(flag.String("http", ":80", "the local address to use for http"))
+	httpsAddr	=	(flag.String("https", "", "the local address to use for https, empty to disable it"))
+	sslCert		=	(flag.String("sslcert", "", "the path to sslcert"))
+	sslKey		=	(flag.String("sslkey", "", "the path to sslkey"))
 	Root 		=	(flag.String("root", ".", "the public directory to serve"))
 	Default 	=	(flag.String("default", "404", "set the default url.path when there is a 404 error"))
 	Methods 	=	(flag.String("methods", "GET", "the allowed request methods"))
-	TTL			=	(flag.Int("ttl", -1, "how many seconds will the cache live ?"))
+	TTL		=	(flag.Int("ttl", -1, "how many seconds will the cache live ?"))
 	GZLevel		=	(flag.Int("gzip", -1, "the gzip compression level, -1/0 for none 9 best compression"))
 	MethodsArray []string
 )
@@ -42,7 +42,6 @@ func init() {
 	fmt.Printf(`(*) GZipLevel: 		%d %s`, *GZLevel, "\n")
 	fmt.Printf(`(*) CacheTTL: 		%d %s`, *TTL, "\n")
 	fmt.Printf(`(*) DefaultURLPath: 	%s %s`, *Default, "\n")
-	fmt.Printf(`(*) AllowedMethods: 	%s %s`, *Methods, "\n")
 	fmt.Printf(`(*) AllowedMethods: 	%s %s`, *Methods, "\n")
 	fmt.Println(``)
 }
