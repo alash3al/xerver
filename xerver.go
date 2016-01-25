@@ -76,7 +76,7 @@ func serve() http.Handler {
 		if _, e := os.Stat(path.Join(*Root, r.URL.Path)); e != nil && (*Default != "404") {
 			r.URL.Path = *Default
 		}
-		if *GZLevel > -1 {
+		if *GZLevel > -1 && strings.contains(r.Header.Get("Accept-Encoding"), "gzip"){
 			w.Header().Set("Content-Encoding", "gzip")
 			gz, _ := gzip.NewWriterLevel(w, *GZLevel)
 			defer gz.Close()
