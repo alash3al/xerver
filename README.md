@@ -75,7 +75,12 @@ Example (2)
 
 Building from source
 ==================
-1- make sure you have `Golang` installed .
-2- `go get github.com/alash3al/xerver`
-3- `go install github.com/alash3al/xerver`
-4- enjoy .
+1- make sure you have `Golang` installed .  
+2- `go get github.com/alash3al/xerver`  
+3- `go install github.com/alash3al/xerver`  
+4- enjoy .  
+
+
+Author
+==================
+By [Mohammed Al Ashaal](http://www.alash3al.xyz)
