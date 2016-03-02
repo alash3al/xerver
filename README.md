@@ -25,10 +25,10 @@ How It Works
 
 Installation
 ==============
-1-	Download the right binary for your os from [here](https://github.com/alash3al/xerver/releases/tag/v2.0) .
-2- Extract the downloaded file contents to any directory say `./xerver/` "current directory" .
-3- Using your `Terminal` `cd ./xerver/` .
-4- run the following command to display the available options `./xerver --help`.
+1- Download the right binary for your os from [here](https://github.com/alash3al/xerver/releases/tag/v2.0) .  
+2- Extract the downloaded file contents to any directory say `./xerver/` "current directory" .  
+3- Using your `Terminal` `cd ./xerver/` .  
+4- run the following command to display the available options `./xerver --help`.  
 
 Example (1)
 ==============
