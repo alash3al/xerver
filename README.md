@@ -1,45 +1,81 @@
-# xerver
-a tiny static http(s) web server written in golang
+xerver v2.0
+============
+just a light and fast reverse proxy for fastcgi based processes .
 
-# requirements
-[golang](https://golang.org/dl/)
+Features
+============
+* Cross platform .  
+* Accelerated and optimized without modules hell.  
+* No configurations needed .  
+* Standalone, Tiny & Lightweight .  
+* Supports both http and https .  
+* Automatically use HTTP/2 "in https" .  
+* Control the whole webserver just with your preferred programming language .  
+* Tell xerver to perform some operations  using http-headers, i.e "send-file, proxy-pass, ... etc" .  
+* More is coming, just stay tuned .
 
-# installation
-(1)- `go get github.com/alash3al/xerver` .   
-(2)- `go install github.com/alash3al/xerver` .  
+How It Works 
+=============
+* A request hits the `xerver` .  
+* `xerver` handles the request .  
+* `xserver` send it to the backend `fastcgi` process and the main controller file .  
+* the controller file contains your own logic .    
+* `fastcgi` process reply to `xerver` with the result . 
+* `xerver` parse the result and then prepare it to be sent to the client .  
 
-**NOTE** you should add `GOPATH/bin` to your `PATH` ..  
+Installation
+==============
+1-	Download the right binary for your os from [here](#) .
+2- Extract the downloaded file contents to any directory say `./xerver/` "current directory" .
+3- Using your `Terminal` `cd ./xerver/` .
+4- run the following command to display the available options `./xerver --help`.
 
-# usage 
-- `xerver -option value` or `xerver --option=value`  
-- `xerver --help` for full arguments .  
-
-# options
+Example (1)
+==============
+**Only acts as a static file server** 
+```bash
+./xerver --static-dir=/path/to/www/ --addr=0.0.0.0:80
 ```
-  -default string
-        set the default url.path when there is a 404 error (default "404")
-  -gzip int
-        the gzip compression level, -1/0 for none 9 best compression (default -1)
-  -http string
-        the local address to use for http (default ":80")
-  -https string
-        the local address to use for https, empty to disable it
-  -methods string
-        the allowed request methods (default "GET")
-  -root string
-        the public directory to serve (default ".")
-  -sslcert string
-        the path to sslcert
-  -sslkey string
-        the path to sslkey
-  -ttl int
-        how many seconds will the cache live ? (default -1)
+
+Example (2)
+==============
+**Listen on address `0.0.0.0:80`** and send the requests to `./controller.php`  
+```bash
+./xerver --fcgi-proto=unix --fcgi-addr=/path/to/php-fpm.socks --fcgi-controller=./controller.php --http-addr=:80
+```
+** OR Listen on address `0.0.0.0:80` & ``0.0.0.0:443`` ** and send the requests to `./controller.php` 
+```bash
+./xerver --fcgi-proto=unix --fcgi-addr=/path/to/php-fpm.socks --fcgi-controller=./controller.php --http-addr=:80 --https-addr=:443 --https-cert=./cert.pem --https-key=./key.pem
 ```
 
-# examples
+**Open your ./controller.php** and :
+```php
+<?php
+	
+	// uncomment any of the following to test it .
 
-**Serving files from `/htdocs/`** `xerver -root /htdocs/`   
-**Serving files from `/htdocs/` and listen on "0.0.0.0:8080"** `xerver -root /htdocs/ -http :8080`   
+	// here you perform your own logic
+	// echo "<pre>" . print_r($_SERVER, 1);
 
-# author
-[Mohammed Al Ashaal](http://www.alash3al.xyz)
+	// some xerver internal header for some operations
+	// 1)- tell xerver to serve a file/directory to the client .
+	// header("Xerver-Internal-FileServer: " . __DIR__ . "/style.css");
+	
+	// 2)- tell xerver to serve from another server "act as reverse proxy" .
+	// header("Xerver-Internal-ProxyPass: http://localhost:8080/");
+
+	// 3)- tell xerverto hide its own tokens "A.K.A Server header"
+	// header("Xerver-Internal-ServerTokens: off");
+
+	// the above headers won't be sent to the client .
+```
+
+**Open your browser** and go to `localhost` or any `localhost` paths/subdomains .  
+
+
+Building from source
+==================
+1- make sure you have `Golang` installed .
+2- `go get github.com/alash3al/xerver`
+3- `go install github.com/alash3al/xerver`
+4- enjoy .
