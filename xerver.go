@@ -198,7 +198,7 @@ func init() {
     }
     if *FCGI_CONTROLLER != "" {
         stat, err := os.Stat(*FCGI_CONTROLLER)
-        if e != nil {
+        if err != nil {
             log.Fatal("err> ", err.Error())
         }
     }
