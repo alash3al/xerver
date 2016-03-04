@@ -197,7 +197,7 @@ func init() {
         *HTTPS_ADDR = "0.0.0.0" + *HTTPS_ADDR
     }
     if *FCGI_CONTROLLER != "" {
-        stat, err := os.Stat(*FCGI_CONTROLLER)
+        _, err := os.Stat(*FCGI_CONTROLLER)
         if err != nil {
             log.Fatal("err> ", err.Error())
         }
