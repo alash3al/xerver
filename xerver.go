@@ -196,6 +196,12 @@ func init() {
     if strings.HasPrefix(*HTTPS_ADDR, ":") {
         *HTTPS_ADDR = "0.0.0.0" + *HTTPS_ADDR
     }
+    if *FCGI_CONTROLLER != "" {
+        stat, err := os.Stat(*FCGI_CONTROLLER)
+        if e != nil {
+            log.Fatal("err> ", err.Error())
+        }
+    }
     fmt.Println("# Welcome to ",          VERSION)
     fmt.Println("# Static Dir: ",         *STATIC_DIR)
     fmt.Println("# FCGI Address: ",       *FCGI_ADDR)
