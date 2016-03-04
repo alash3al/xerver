@@ -78,6 +78,7 @@ func ServePHP(res http.ResponseWriter, req *http.Request) {
         "SCRIPT_FILENAME"           :   *FCGI_CONTROLLER,
         "SCRIPT_NAME"               :   "/index.php",
         "REQUEST_METHOD"            :   req.Method,
+        "REQUEST_FILE_NAME"         :   req.URL.Path,
         "REQUEST_FILE_EXISTS"       :   fmt.Sprintf("%t", stat != nil && os.IsExist(err)),
         "REQUEST_FILE_IS_DIR"       :   fmt.Sprintf("%t", stat != nil && stat.IsDir()),
         "REQUEST_FILE_EXTENSION"    :   filepath.Ext(req.URL.Path),
