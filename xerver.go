@@ -196,7 +196,7 @@ func init() {
     if strings.HasPrefix(*HTTPS_ADDR, ":") {
         *HTTPS_ADDR = "0.0.0.0" + *HTTPS_ADDR
     }
-    if *FCGI_CONTROLLER != "" {
+    if *FCGI_CONTROLLER != "none" {
         _, err := os.Stat(*FCGI_CONTROLLER)
         if err != nil {
             log.Fatal("err> ", err.Error())
