@@ -66,21 +66,19 @@ func ServePHP(res http.ResponseWriter, req *http.Request) {
     // -- http[addr, port]
     // -- https[addr, port]
     // -- remote[addr, host, port]
-    // -- stat of the requested filename
     // -- environment variables
     http_addr, http_port := split(*HTTP_ADDR, ":")
     https_addr, https_port := split(*HTTPS_ADDR, ":")
     remote_addr, remote_port := split(req.RemoteAddr, ":")
-    hosts, _ := net.LookupAddr(remote_addr)
-    stat, err := os.Stat(req.URL.Path)
+    hosts, _ := net.LookupHost(remote_addr)
+    if len(hosts) < 0 {
+        hosts = append(hosts, remote_addr)
+    }
     env := map[string]string {
         "DOCUMENT_ROOT"             :   filepath.Dir(*FCGI_CONTROLLER),
         "SCRIPT_FILENAME"           :   *FCGI_CONTROLLER,
         "SCRIPT_NAME"               :   "/index.php",
         "REQUEST_METHOD"            :   req.Method,
-        "REQUEST_FILE_NAME"         :   req.URL.Path,
-        "REQUEST_FILE_EXISTS"       :   fmt.Sprintf("%t", stat != nil && os.IsExist(err)),
-        "REQUEST_FILE_IS_DIR"       :   fmt.Sprintf("%t", stat != nil && stat.IsDir()),
         "REQUEST_FILE_EXTENSION"    :   filepath.Ext(req.URL.Path),
         "REQUEST_URI"               :   req.URL.RequestURI(),
         "REQUEST_PATH"              :   req.URL.Path,
