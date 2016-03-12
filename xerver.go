@@ -13,7 +13,6 @@ import "strconv"
 import "strings"
 import "net/url"
 import "net/http"
-import "path/filepath"
 import "net/http/httputil"
 import "github.com/tomasen/fcgi_client"
 
@@ -33,24 +32,7 @@ var (
 
 // ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
-func ServePHP(res http.ResponseWriter, req *http.Request) {
-    // we only allow [GET, POST, PUT, DELETE, HEAD, OPTIONS, PATCH]
-    if req.Method != "GET" && req.Method != "POST" && req.Method != "PUT" && req.Method != "DELETE" && req.Method != "HEAD" && req.Method != "OPTIONS" && req.Method != "PATCH" {
-        http.Error(res, "we don't support the requested action", 405)
-        return
-    }
-    // a helper function that will split the provided input
-    // using the specified delemiter into 2 parts
-    // but return them as two returns .
-    split := func(in string, del string) (string, string) {
-        s := strings.SplitN(in, del, 2)
-        if len(s) < 1 {
-            s = append(s, "", "")
-        } else if len(s) < 2 {
-            s = append(s, "")
-        }
-        return s[0], s[1]
-    }
+func ServeFCGI(res http.ResponseWriter, req *http.Request) {
     // connect to the fastcgi backend,
     // and check whether there is an error or not .
     fcgi, err := fcgiclient.Dial(*FCGI_PROTO, *FCGI_ADDR)
@@ -67,45 +49,28 @@ func ServePHP(res http.ResponseWriter, req *http.Request) {
     // -- https[addr, port]
     // -- remote[addr, host, port]
     // -- environment variables
-    http_addr, http_port := split(*HTTP_ADDR, ":")
-    https_addr, https_port := split(*HTTPS_ADDR, ":")
-    remote_addr, remote_port := split(req.RemoteAddr, ":")
-    hosts, _ := net.LookupHost(remote_addr)
-    if len(hosts) < 0 {
-        hosts = append(hosts, remote_addr)
-    }
+    http_addr, http_port, _ := net.SplitHostPort(*HTTP_ADDR)
+    https_addr, https_port, _ := net.SplitHostPort(*HTTPS_ADDR)
+    remote_addr, remote_port, _ := net.SplitHostPort(req.RemoteAddr)
     env := map[string]string {
-        "DOCUMENT_ROOT"             :   filepath.Dir(*FCGI_CONTROLLER),
         "SCRIPT_FILENAME"           :   *FCGI_CONTROLLER,
-        "SCRIPT_NAME"               :   "/index.php",
         "REQUEST_METHOD"            :   req.Method,
         "REQUEST_URI"               :   req.URL.RequestURI(),
         "REQUEST_PATH"              :   req.URL.Path,
-        "REQUEST_FILE_EXTENSION"    :   filepath.Ext(req.URL.Path),
-        "REQUEST_FILE_NAME"         :   req.URL.Path,
+        "QUERY_STRING"              :   req.URL.Query().Encode(),
         "PATH_INFO"                 :   req.URL.Path,
-        "ORIG_PATH_INFO"            :   req.URL.Path,
-        "PATH_TRANSLATED"           :   *FCGI_CONTROLLER,
-        "PHP_SELF"                  :   *FCGI_CONTROLLER,
-        "CONTENT_LENGTH"            :   fmt.Sprintf("%d", req.ContentLength),
-        "CONTENT_TYPE"              :   req.Header.Get("Content-Type"),
         "REMOTE_ADDR"               :   remote_addr,
         "REMOTE_PORT"               :   remote_port,
-        "REMOTE_HOST"               :   hosts[0],
-        "QUERY_STRING"              :   req.URL.Query().Encode(),
         "SERVER_SOFTWARE"           :   VERSION,
         "SERVER_NAME"               :   req.Host,
         "SERVER_ADDR"               :   http_addr,
         "SERVER_PORT"               :   http_port,
         "SERVER_PROTOCOL"           :   req.Proto,
-        "SERVER_TEMP_DIR"           :   os.TempDir(),
-        "SCHEME"                    :   "http",
-        "HTTPS"                     :   "",
         "HTTP_HOST"                 :   req.Host,
+        "HTTPS"                     :   "",
     }
     // tell fastcgi backend that, this connection is done over https connection if detected .
     if req.TLS != nil {
-        env["SCHEME"] = "https"
         env["HTTPS"] = "on"
         env["SERVER_PORT"] = https_port
         env["SERVER_ADDR"] = https_addr
@@ -225,7 +190,7 @@ func main() {
 	// the handler
 	handler := func(res http.ResponseWriter, req *http.Request) {
 		if *STATIC_DIR == "none" {
-			ServePHP(res, req)
+			ServeFCGI(res, req)
 			return
 		}
 		http.FileServer(http.Dir(*STATIC_DIR)).ServeHTTP(res, req)
