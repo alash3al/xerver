@@ -13,7 +13,6 @@ import "strconv"
 import "strings"
 import "net/url"
 import "net/http"
-import "path/filepath"
 import "net/http/httputil"
 import "github.com/tomasen/fcgi_client"
 
