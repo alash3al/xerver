@@ -13,6 +13,7 @@ import "strconv"
 import "strings"
 import "net/url"
 import "net/http"
+import "path/filepath"
 import "net/http/httputil"
 import "github.com/tomasen/fcgi_client"
 
@@ -20,7 +21,7 @@ import "github.com/tomasen/fcgi_client"
 
 var (
     VERSION         string      =   "xerver/v2.0"
-    STATIC_DIR      *string 	=   flag.String("static-dir", "none", "the static directory to serve static files")
+    STATIC_DIR		*string     =   flag.String("static-dir", "none", "the static directory to serve static files")
     FCGI_PROTO      *string     =   flag.String("fcgi-proto", "none", "the fastcgi protocol [unix, tcp, none]")
     FCGI_ADDR       *string     =   flag.String("fcgi-addr", "none", "the fastcgi address/location i.e '/run/php/php-fpm.sock'")
     FCGI_CONTROLLER *string     =   flag.String("fcgi-controller", "none", "the main fascgi controller i.e '/root/main.php'")
@@ -53,24 +54,35 @@ func ServeFCGI(res http.ResponseWriter, req *http.Request) {
     https_addr, https_port, _ := net.SplitHostPort(*HTTPS_ADDR)
     remote_addr, remote_port, _ := net.SplitHostPort(req.RemoteAddr)
     env := map[string]string {
+        "DOCUMENT_ROOT"             :   filepath.Dir(*FCGI_CONTROLLER),
         "SCRIPT_FILENAME"           :   *FCGI_CONTROLLER,
         "REQUEST_METHOD"            :   req.Method,
         "REQUEST_URI"               :   req.URL.RequestURI(),
         "REQUEST_PATH"              :   req.URL.Path,
-        "QUERY_STRING"              :   req.URL.Query().Encode(),
+        "REQUEST_FILE_EXTENSION"    :   filepath.Ext(req.URL.Path),
+        "REQUEST_FILE_NAME"         :   req.URL.Path,
         "PATH_INFO"                 :   req.URL.Path,
+        "ORIG_PATH_INFO"            :   req.URL.Path,
+        "PATH_TRANSLATED"           :   *FCGI_CONTROLLER,
+        "CONTENT_LENGTH"            :   fmt.Sprintf("%d", req.ContentLength),
+        "CONTENT_TYPE"              :   req.Header.Get("Content-Type"),
         "REMOTE_ADDR"               :   remote_addr,
         "REMOTE_PORT"               :   remote_port,
+        "REMOTE_HOST"               :   remote_addr,
+        "QUERY_STRING"              :   req.URL.Query().Encode(),
         "SERVER_SOFTWARE"           :   VERSION,
         "SERVER_NAME"               :   req.Host,
         "SERVER_ADDR"               :   http_addr,
         "SERVER_PORT"               :   http_port,
         "SERVER_PROTOCOL"           :   req.Proto,
-        "HTTP_HOST"                 :   req.Host,
+        "SERVER_TEMP_DIR"           :   os.TempDir(),
+        "SCHEME"                    :   "http",
         "HTTPS"                     :   "",
+        "HTTP_HOST"                 :   req.Host,
     }
     // tell fastcgi backend that, this connection is done over https connection if detected .
     if req.TLS != nil {
+        env["SCHEME"] = "https"
         env["HTTPS"] = "on"
         env["SERVER_PORT"] = https_port
         env["SERVER_ADDR"] = https_addr
