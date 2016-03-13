@@ -20,7 +20,7 @@ import "github.com/tomasen/fcgi_client"
 
 var (
     VERSION         string      =   "xerver/v2.0"
-    STATIC_DIR		*string 	=	flag.String("static-dir", "none", "the static directory to serve static files")
+    STATIC_DIR      *string 	=   flag.String("static-dir", "none", "the static directory to serve static files")
     FCGI_PROTO      *string     =   flag.String("fcgi-proto", "none", "the fastcgi protocol [unix, tcp, none]")
     FCGI_ADDR       *string     =   flag.String("fcgi-addr", "none", "the fastcgi address/location i.e '/run/php/php-fpm.sock'")
     FCGI_CONTROLLER *string     =   flag.String("fcgi-controller", "none", "the main fascgi controller i.e '/root/main.php'")
