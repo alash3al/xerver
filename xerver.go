@@ -54,16 +54,11 @@ func ServeFCGI(res http.ResponseWriter, req *http.Request) {
     https_addr, https_port, _ := net.SplitHostPort(*HTTPS_ADDR)
     remote_addr, remote_port, _ := net.SplitHostPort(req.RemoteAddr)
     env := map[string]string {
-        "DOCUMENT_ROOT"             :   filepath.Dir(*FCGI_CONTROLLER),
         "SCRIPT_FILENAME"           :   *FCGI_CONTROLLER,
         "REQUEST_METHOD"            :   req.Method,
         "REQUEST_URI"               :   req.URL.RequestURI(),
         "REQUEST_PATH"              :   req.URL.Path,
-        "REQUEST_FILE_EXTENSION"    :   filepath.Ext(req.URL.Path),
-        "REQUEST_FILE_NAME"         :   req.URL.Path,
         "PATH_INFO"                 :   req.URL.Path,
-        "ORIG_PATH_INFO"            :   req.URL.Path,
-        "PATH_TRANSLATED"           :   *FCGI_CONTROLLER,
         "CONTENT_LENGTH"            :   fmt.Sprintf("%d", req.ContentLength),
         "CONTENT_TYPE"              :   req.Header.Get("Content-Type"),
         "REMOTE_ADDR"               :   remote_addr,
@@ -75,8 +70,6 @@ func ServeFCGI(res http.ResponseWriter, req *http.Request) {
         "SERVER_ADDR"               :   http_addr,
         "SERVER_PORT"               :   http_port,
         "SERVER_PROTOCOL"           :   req.Proto,
-        "SERVER_TEMP_DIR"           :   os.TempDir(),
-        "SCHEME"                    :   "http",
         "HTTPS"                     :   "",
         "HTTP_HOST"                 :   req.Host,
     }
