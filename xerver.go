@@ -1,6 +1,19 @@
-// xerver 2.0, a tiny and light fastcgi reverse proxy only,
+// xerver 3.0, a tiny and light transparent fastcgi reverse proxy,
 // copyright 2016, (c) Mohammed Al Ashaal <http://www.alash3al.xyz>,
 // published uner MIT licnese .
+// -----------------------------
+// *> available options
+// >> --root        [only use xerver as static file server],            i.e "/var/www/" .
+// >> --backend     [only use xerver as fastcgi reverse proxy],         i.e "[unix|tcp]:/var/run/php5-fpm.sock" .
+// >> --controller  [the fastcgi process main file "SCRIPT_FILENAME"],  i.e "/var/www/main.php"
+// >> --http        [the local http address to listen on],              i.e ":80"
+// >> --https       [the local https address to listen on],             i.e ":443"
+// >> --cert        [the ssl cert file path],                           i.e "/var/ssl/ssl.cert"
+// >> --key         [the ssl key file path],                            i.e "/var/ssl/ssl.key"
+// *> available internals
+// >> Xerver-Internal-ServerTokens [off|on]
+// >> Xerver-Internal-FileServer [file|directory]
+// >> Xerver-Internal-ProxyPass [transparent-http-proxy]
 package main
 
 import "os"
@@ -18,16 +31,22 @@ import "github.com/tomasen/fcgi_client"
 
 // ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
+// user vars
 var (
-    VERSION         string      =   "xerver/v2.0"
-    STATIC_DIR		*string     =   flag.String("static-dir", "none", "the static directory to serve static files")
-    FCGI_PROTO      *string     =   flag.String("fcgi-proto", "none", "the fastcgi protocol [unix, tcp, none]")
-    FCGI_ADDR       *string     =   flag.String("fcgi-addr", "none", "the fastcgi address/location i.e '/run/php/php-fpm.sock'")
-    FCGI_CONTROLLER *string     =   flag.String("fcgi-controller", "none", "the main fascgi controller i.e '/root/main.php'")
-    HTTP_ADDR       *string     =   flag.String("http-addr", ":80", "the xerver http address")
-    HTTPS_ADDR      *string     =   flag.String("https-addr", "none", "the xerver https address")
-    HTTPS_KEY       *string     =   flag.String("https-key", "none", "the xerver https ssl key filename")
-    HTTPS_CERT      *string     =   flag.String("https-cert", "none", "the xerver https ssl cert filename")
+    ROOT        *string     =   flag.String("root", "", "the static files root directory, (default empty)")
+    BACKEND     *string     =   flag.String("backend", "", "the fastcgi backend address, (default empty)")
+    CONTROLLER  *string     =   flag.String("controller", "", "the fastcgi main controller file, (default empty)")
+    HTTP        *string     =   flag.String("http", ":80", "the http-server local address")
+    HTTPS       *string     =   flag.String("https", "", "the https-server local address, (default empty)")
+    CERT        *string     =   flag.String("cert", "", "the ssl cert file, (default empty)")
+    KEY         *string     =   flag.String("key", "", "the ssl key file, (default empty)")
+)
+
+// system vars
+var (
+    VERSION     string      =   "xerver/v3.0"
+    FCGI_PROTO  string      =   ""
+    FCGI_ADDR   string      =   ""
 )
 
 // ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
@@ -35,7 +54,7 @@ var (
 func ServeFCGI(res http.ResponseWriter, req *http.Request) {
     // connect to the fastcgi backend,
     // and check whether there is an error or not .
-    fcgi, err := fcgiclient.Dial(*FCGI_PROTO, *FCGI_ADDR)
+    fcgi, err := fcgiclient.Dial(FCGI_PROTO, FCGI_ADDR)
     if err != nil {
         log.Println(err)
         http.Error(res, "Unable to connect to the backend", 502)
@@ -48,12 +67,14 @@ func ServeFCGI(res http.ResponseWriter, req *http.Request) {
     // -- http[addr, port]
     // -- https[addr, port]
     // -- remote[addr, host, port]
+    // -- edit the request path
     // -- environment variables
-    http_addr, http_port, _ := net.SplitHostPort(*HTTP_ADDR)
-    https_addr, https_port, _ := net.SplitHostPort(*HTTPS_ADDR)
+    http_addr, http_port, _ := net.SplitHostPort(*HTTP)
+    https_addr, https_port, _ := net.SplitHostPort(*HTTPS)
     remote_addr, remote_port, _ := net.SplitHostPort(req.RemoteAddr)
+    req.URL.Path = strings.TrimRight(req.URL.ResolveReference(req.URL).Path, "/") + "/"
     env := map[string]string {
-        "SCRIPT_FILENAME"           :   *FCGI_CONTROLLER,
+        "SCRIPT_FILENAME"           :   *CONTROLLER,
         "REQUEST_METHOD"            :   req.Method,
         "REQUEST_URI"               :   req.URL.RequestURI(),
         "REQUEST_PATH"              :   req.URL.Path,
@@ -69,15 +90,18 @@ func ServeFCGI(res http.ResponseWriter, req *http.Request) {
         "SERVER_ADDR"               :   http_addr,
         "SERVER_PORT"               :   http_port,
         "SERVER_PROTOCOL"           :   req.Proto,
+        "FCGI_PROTOCOL"             :   FCGI_PROTO,
+        "FCGI_ADDR"                 :   FCGI_ADDR,
         "HTTPS"                     :   "",
         "HTTP_HOST"                 :   req.Host,
     }
-    // tell fastcgi backend that, this connection is done over https connection if detected .
+    // tell fastcgi backend that, this connection is done over https connection if enabled .
     if req.TLS != nil {
-        env["SCHEME"] = "https"
         env["HTTPS"] = "on"
         env["SERVER_PORT"] = https_port
         env["SERVER_ADDR"] = https_addr
+        env["SSL_CERT"] = *CERT 
+        env["SSL_KEY"] = *KEY 
     }
     // iterate over request headers and append them to the environment varibales in the valid format .
     for k, v := range req.Header {
@@ -155,29 +179,39 @@ func ServeFCGI(res http.ResponseWriter, req *http.Request) {
 // - display welcome messages
 func init() {
     flag.Parse()
-    if *STATIC_DIR == "none" && (*FCGI_PROTO == "none" || *FCGI_ADDR == "none" || *FCGI_CONTROLLER == "none") {
-        log.Fatal("You must configure xerver to only act as a reverse/static server")
+    if (*ROOT == "" && *BACKEND == "") || (*ROOT != "" && *BACKEND != "") {
+        log.Fatal("Please, choose whether you want me as transparent static-server or reverse-proxy ?")
     }
-    if strings.HasPrefix(*HTTP_ADDR, ":") {
-        *HTTP_ADDR = "0.0.0.0" + *HTTP_ADDR
-    }
-    if strings.HasPrefix(*HTTPS_ADDR, ":") {
-        *HTTPS_ADDR = "0.0.0.0" + *HTTPS_ADDR
-    }
-    if *FCGI_CONTROLLER != "none" {
-        _, err := os.Stat(*FCGI_CONTROLLER)
-        if err != nil {
-            log.Fatal("err> ", err.Error())
+    if *ROOT != "" {
+        if _, e := os.Stat(*ROOT); e != nil {
+            log.Fatal(e)
         }
     }
-    fmt.Println("# Welcome to ",          VERSION)
-    fmt.Println("# Static Dir: ",         *STATIC_DIR)
-    fmt.Println("# FCGI Address: ",       *FCGI_ADDR)
-    fmt.Println("# FCGI Controller: ",    *FCGI_CONTROLLER)
-    fmt.Println("# HTTP Address: ",       *HTTP_ADDR)
-    fmt.Println("# HTTPS Address: ",      *HTTPS_ADDR)
-    fmt.Println("# HTTPS Key: ",          *HTTPS_KEY)
-    fmt.Println("# HTTPS Cert: ",         *HTTPS_CERT)
+    if *BACKEND != "" {
+        parts := strings.SplitN(*BACKEND, ":", 2)
+        if ! strings.Contains(*BACKEND, ":") || len(parts) < 2 {
+            log.Fatal("Please, provide a valid backend format [protocol:address]")
+        }
+        FCGI_PROTO = parts[0]
+        FCGI_ADDR = parts[1]
+        if _, e := os.Stat(*CONTROLLER); e != nil {
+            log.Fatal(e)
+        }
+    }
+    if strings.HasPrefix(*HTTP, ":") {
+        *HTTP = "0.0.0.0" + *HTTP
+    }
+    if strings.HasPrefix(*HTTPS, ":") {
+        *HTTPS = "0.0.0.0" + *HTTPS
+    }
+    fmt.Println("Welcome to ", VERSION)
+    fmt.Println("Backend:           ",  *BACKEND)
+    fmt.Println("CONTROLLER:        ",  *CONTROLLER)
+    fmt.Println("HTTP Address:      ",  *HTTP)
+    fmt.Println("ROOT:              ",  *ROOT)
+    fmt.Println("HTTPS Address:     ",  *HTTPS)
+    fmt.Println("SSL Cert:          ",  *CERT)
+    fmt.Println("SSL Key:           ",  *KEY)
     fmt.Println("")
 }
 
@@ -186,29 +220,31 @@ func init() {
 // let's play :)
 func main() {
 	// handle any panic
-	defer (func(){
+	rcvr := func(){
 		if err := recover(); err != nil {
 			log.Println("err> ", err)
 		}
-	})()
+	}
 	// the handler
 	handler := func(res http.ResponseWriter, req *http.Request) {
-		if *STATIC_DIR == "none" {
+		if *ROOT == "" {
 			ServeFCGI(res, req)
 			return
 		}
-		http.FileServer(http.Dir(*STATIC_DIR)).ServeHTTP(res, req)
+		http.FileServer(http.Dir(*ROOT)).ServeHTTP(res, req)
 	}
     // an error channel to catch any error
     err := make(chan error)
     // run a http server in a goroutine
     go (func(){
-        err <- http.ListenAndServe(*HTTP_ADDR, http.HandlerFunc(handler))
+        defer rcvr()
+        err <- http.ListenAndServe(*HTTP, http.HandlerFunc(handler))
     })()
     // run a https server in another goroutine
     go (func(){
-        if *HTTPS_ADDR != "none" && *HTTPS_CERT != "none" && *HTTPS_KEY != "none" {
-            err <- http.ListenAndServeTLS(*HTTPS_ADDR, *HTTPS_CERT, *HTTPS_KEY, http.HandlerFunc(handler))
+        if *HTTPS != "" && *CERT != "" && *KEY != "" {
+            defer rcvr()
+            err <- http.ListenAndServeTLS(*HTTPS, *CERT, *KEY, http.HandlerFunc(handler))
         }
     })()
     // there is an error occurred, 
