@@ -72,7 +72,7 @@ xerver --backend=unix:/var/run/php5-fpm.sock controller=./controller.php --http=
 ```
 
 **Open your browser** and go to `localhost` or any `localhost` paths/subdomains .  
-
+**You can use `xerver.php` as a production ready controller file**
 
 Author
 ==================
