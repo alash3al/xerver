@@ -26,7 +26,7 @@ How It Works
 Building from source
 ==================
 1- make sure you have `Golang` installed .  
-2- `go get github.com/alash3al/xerver`  
+2- `go get -u github.com/alash3al/xerver`  
 3- `go install github.com/alash3al/xerver`  
 4- make sure `$GOPATH` in your `$PATH` env var .    
 5- `xerver --help`
