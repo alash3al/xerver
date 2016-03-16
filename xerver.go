@@ -72,7 +72,7 @@ func ServeFCGI(res http.ResponseWriter, req *http.Request) {
     http_addr, http_port, _ := net.SplitHostPort(*HTTP)
     https_addr, https_port, _ := net.SplitHostPort(*HTTPS)
     remote_addr, remote_port, _ := net.SplitHostPort(req.RemoteAddr)
-    req.URL.Path = strings.TrimRight(req.URL.ResolveReference(req.URL).Path, "/") + "/"
+    req.URL.Path = req.URL.ResolveReference(req.URL).Path
     env := map[string]string {
         "SCRIPT_FILENAME"           :   *CONTROLLER,
         "REQUEST_METHOD"            :   req.Method,
