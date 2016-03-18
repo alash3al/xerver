@@ -1,6 +1,6 @@
 xerver v3.0
 ============
-A transparent balzing fast fastcgi reverse proxy .
+A transparent blazing fast fastcgi reverse proxy .
 
 Features
 ============
